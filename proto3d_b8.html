@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Bảo Khựa · Proto 3D B8 – Liên Quân combat + quiz</title>
+<style>
+
+html,body{margin:0;height:100%;background:#0a1628;color:#fff;font-family:system-ui,-apple-system,sans-serif;overflow:hidden;touch-action:none;-webkit-user-select:none;user-select:none}
+#c{display:block;width:100%;height:100%;touch-action:none}
+#hud{position:fixed;inset:0;pointer-events:none;z-index:5}
+#fps{position:absolute;top:10px;left:10px;background:rgba(22,23,27,.72);border:2px solid #FFD91F;border-radius:12px;padding:7px 11px;font:800 12px/1.25 ui-monospace,monospace;color:#FFD91F;box-shadow:3px 3px 0 #16171B}
+#info{position:absolute;top:10px;right:10px;max-width:48%;text-align:right;font-size:11px;line-height:1.35;background:rgba(22,23,27,.55);padding:7px 9px;border-radius:12px;border:1px solid rgba(255,255,255,.2)}
+#stickZone{position:absolute;left:0;bottom:0;width:50%;height:42%;pointer-events:auto}
+#lookZone{position:absolute;right:0;top:0;width:50%;height:100%;pointer-events:auto}
+#stickBase{position:absolute;width:120px;height:120px;border-radius:50%;border:2px solid rgba(255,255,255,.4);background:rgba(255,255,255,.1);left:24px;bottom:28px;display:none}
+#stickKnob{position:absolute;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;background:#FFD91F;border:2px solid #16171B;left:60px;top:60px;box-shadow:0 3px 0 #16171B}
+/* skillBtn removed B7 */
+#qPanel{pointer-events:auto;position:absolute;left:50%;right:auto;bottom:auto;top:50%;max-height:58vh;overflow:auto;background:rgba(22,23,27,.92);border:2px solid #FFD91F;border-radius:16px;padding:12px;display:block;visibility:hidden;opacity:0;box-shadow:4px 4px 0 #16171B;transform:translate(-50%,-50%) scale(.82);width:min(420px,92vw);z-index:20}
+#qPanel .zh{font-size:26px;font-weight:800;letter-spacing:.04em}
+#qPanel .py{color:#ffe9a8;font-style:italic;font-size:14px;margin-top:2px}
+#qPanel .hint{font-size:12px;opacity:.8;margin-top:6px}
+#qOpts{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+#qOpts button{min-height:48px;border-radius:12px;border:2px solid #16171B;background:#fff;color:#16171B;font-weight:700;font-size:14px;box-shadow:2px 2px 0 #16171B;pointer-events:auto}
+#qReveal{display:none;margin-top:8px;padding:8px;border-radius:10px;background:rgba(255,217,31,.15);font-size:13px}
+#qReveal.on{display:block}
+#hint{position:absolute;bottom:8px;left:50%;transform:translateX(-50%);font-size:10px;opacity:.65;text-align:center;width:88%}
+#err{position:absolute;left:12px;right:12px;bottom:90px;background:#5a1020;padding:10px;border-radius:10px;display:none;font-size:13px}
+.dmg-float{position:absolute;font-weight:900;font-size:22px;text-shadow:2px 2px 0 #16171B;animation:dmgUp 900ms ease-out forwards;pointer-events:none}
+@keyframes dmgUp{from{opacity:1;transform:translate(-50%,0)}to{opacity:0;transform:translate(-50%,-60px)}}
+#talkBtn,#combatPad button{min-width:44px;min-height:44px}
+@media (max-width:360px){#info{display:none}#hpHud{top:56px}}
+#qual{pointer-events:auto;position:absolute;top:52px;left:10px;border:2px solid #16171B;background:#FFD91F;color:#16171B;font-weight:800;font-size:12px;border-radius:999px;padding:10px 14px;min-height:44px;min-width:44px;box-shadow:2px 2px 0 #16171B}
+
+#loadBanner{position:absolute;inset:0;z-index:30;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:linear-gradient(180deg,#4A90C8 0%,#FFB07A 42%,#E8F4F8 70%,#1E90C6 100%);pointer-events:none}
+#loadBanner.hide{opacity:0;transition:opacity .6s ease;pointer-events:none}
+#loadBanner .load-art{position:absolute;inset:0;overflow:hidden}
+#loadBanner .load-sun{position:absolute;width:90px;height:90px;border-radius:50%;background:radial-gradient(circle,#FFE9A0,#FFB347 60%,transparent 70%);
+  right:18%;top:18%;box-shadow:0 0 40px #FFB347}
+#loadBanner .load-sea{position:absolute;left:0;right:0;bottom:0;height:38%;background:linear-gradient(180deg,#3DB8C5,#1a6a9a)}
+#loadBanner .load-karst{position:absolute;bottom:34%;width:0;height:0;border-left:40px solid transparent;border-right:40px solid transparent;border-bottom:110px solid #5C6B73;filter:drop-shadow(3px 3px 0 #16171B)}
+#loadBanner .k1{left:12%;border-bottom-color:#8A9A8E;transform:scale(1.1)}
+#loadBanner .k2{left:42%;border-left-width:55px;border-right-width:55px;border-bottom-width:150px;bottom:32%}
+#loadBanner .k3{right:14%;left:auto;border-bottom-color:#3a4550;transform:scale(.85)}
+#loadTitle{position:relative;z-index:2;margin:0;font-size:28px;font-weight:900;color:#16171B;text-shadow:3px 3px 0 #FFD91F;
+  letter-spacing:.02em;text-align:center;padding:0 16px}
+#loadSub{position:relative;z-index:2;margin:8px 0 18px;font-size:13px;font-weight:700;color:#16171B;opacity:.85}
+.load-bar{position:relative;z-index:2;width:min(240px,70vw);height:14px;border:3px solid #16171B;border-radius:999px;background:rgba(255,255,255,.45);overflow:hidden;box-shadow:3px 3px 0 #16171B}
+.load-bar i{display:block;height:100%;width:8%;background:linear-gradient(90deg,#FFD91F,#ff9f43);transition:width .25s ease}
+body.rec #fps,body.rec #qual,body.rec #info{display:none!important}
+body.rec #hint{opacity:.45;font-size:9px}
+body:not(.ready) #fps,body:not(.ready) #qual,body:not(.ready) #info,
+body:not(.ready) #hpHud,body:not(.ready) #combatPad,body:not(.ready) #talkBtn,
+body:not(.ready) #stickZone,body:not(.ready) #lookZone,body:not(.ready) #hint{visibility:hidden}
+#loadBanner{background:linear-gradient(180deg,#4A90C8 0%,#FFB07A 38%,#E8F4F8 62%,#1E90C6 100%)}
+#loadBanner:not(.hide){opacity:1}
+#loadBanner.hide{opacity:0!important;pointer-events:none!important;display:none!important}
+#loadBanner .load-art{opacity:.95}
+#loadBanner #loadTitle,#loadBanner #loadSub,.load-bar{background:rgba(255,255,255,.55);padding:8px 14px;border-radius:12px;border:2px solid #16171B;box-shadow:3px 3px 0 #16171B}
+#loadBanner .load-bar{padding:0;background:rgba(255,255,255,.55)}
+
+/* B7 MOBA + question card */
+#manaRow{margin-top:6px}
+#manaRow .lab{display:flex;justify-content:space-between;font-size:11px;font-weight:800;margin-bottom:2px}
+#manaBarWrap{height:8px;background:#1a2744;border:2px solid #16171B;border-radius:8px;overflow:hidden;box-shadow:2px 2px 0 #16171B}
+#manaBar{display:block;height:100%;width:100%;background:linear-gradient(90deg,#4da3ff,#7c5cff);transition:width .2s}
+#combatPad{pointer-events:none;position:absolute;right:10px;bottom:18px;width:168px;height:200px}
+#combatPad button{pointer-events:auto;position:absolute;border:3px solid #16171B;border-radius:50%;color:#fff;font-weight:800;box-shadow:3px 3px 0 #16171B;display:flex;align-items:center;justify-content:center;text-align:center;line-height:1.05;padding:0;-webkit-tap-highlight-color:transparent}
+#atkBtn{width:72px;height:72px;right:8px;bottom:8px;background:linear-gradient(180deg,#ff8a5c,#e23d2b);font-size:12px}
+#sk1{width:52px;height:52px;right:92px;bottom:18px;background:linear-gradient(180deg,#5cc8ff,#1E90C6);font-size:11px}
+#sk2{width:52px;height:52px;right:78px;bottom:78px;background:linear-gradient(180deg,#7dffb0,#1aa86a);font-size:11px}
+#sk3{width:52px;height:52px;right:18px;bottom:92px;background:linear-gradient(180deg,#c9a0ff,#6b3fd6);font-size:11px}
+#ultBtn{width:58px;height:58px;right:100px;bottom:140px;background:linear-gradient(180deg,#FFE56B,#FF9F1A);color:#16171B;font-size:11px;border-color:#16171B}
+#combatPad button .cd{position:absolute;inset:0;border-radius:50%;background:conic-gradient(rgba(0,0,0,.72) var(--p,0%), transparent 0);pointer-events:none}
+#combatPad button.disabled{filter:grayscale(.4) brightness(.75)}
+#combatPad button .lbl{position:relative;z-index:1;pointer-events:none}
+#talkBtn{right:18px;bottom:228px!important}
+#qPanel{left:50%;right:auto;bottom:auto;top:50%;transform:translate(-50%,-50%) scale(.82);width:min(420px,92vw);max-height:58vh;opacity:0;pointer-events:none;display:block;visibility:hidden;z-index:20;box-shadow:0 0 0 0 rgba(255,217,31,0);transition:transform .35s cubic-bezier(.2,1.2,.3,1),opacity .3s ease,box-shadow .35s}
+#qPanel.show{visibility:visible;opacity:1;pointer-events:auto;transform:translate(-50%,-50%) scale(1);box-shadow:0 0 28px 4px rgba(255,217,31,.55),4px 4px 0 #16171B}
+#qPanel.hide-out{opacity:0;transform:translate(-50%,-50%) scale(.75);pointer-events:none;box-shadow:0 0 0 0 rgba(255,217,31,0)}
+#qPanel .badge{display:inline-block;font-size:10px;font-weight:800;background:#FFD91F;color:#16171B;border-radius:999px;padding:3px 8px;margin-bottom:6px;border:2px solid #16171B}
+#qPanel .zh{font-size:24px}
+#flashFx{position:absolute;inset:0;background:#fff;opacity:0;pointer-events:none;z-index:18;transition:opacity .08s}
+#pauseVeil{position:absolute;inset:0;background:rgba(6,12,24,.35);opacity:0;pointer-events:none;z-index:15;transition:opacity .25s}
+#pauseVeil.on{opacity:1}
+#ultBanner{position:absolute;left:50%;top:18%;transform:translateX(-50%) scale(.9);opacity:0;pointer-events:none;z-index:19;font-weight:900;font-size:28px;color:#FFD91F;text-shadow:3px 3px 0 #16171B,0 0 20px #ff9f1a;transition:opacity .25s,transform .35s}
+#ultBanner.on{opacity:1;transform:translateX(-50%) scale(1)}
+body:not(.ready) #combatPad,body:not(.ready) #manaRow{visibility:hidden}
+body.rec #combatPad button{box-shadow:2px 2px 0 #16171B}
+#hint{bottom:4px;font-size:9px;width:94%}
+#stickZone{height:38%;width:46%}
+#lookZone{width:54%;height:55%;top:0}
+
+
+
+/* ?fps=1 debug overlay — zero layout cost when absent */
+#fpsDbg{display:none;position:absolute;top:8px;left:8px;z-index:6;pointer-events:none;
+  max-width:min(200px,48vw);background:rgba(22,23,27,.88);border:2px solid #FFD91F;border-radius:10px;
+  padding:6px 8px;font:700 11px/1.35 ui-monospace,monospace;color:#FFD91F;box-shadow:2px 2px 0 #16171B;
+  white-space:pre;letter-spacing:0}
+body.fpsdbg #fpsDbg{display:block}
+body.fpsdbg #fps{display:none!important}
+body.fpsdbg #qual{top:8px;left:auto;right:10px;z-index:6}
+#hpHud{pointer-events:none;position:absolute;left:10px;right:10px;top:78px}
+body.fpsdbg #hpHud{top:118px!important}
+@media (max-width:360px){body.fpsdbg #hpHud{top:118px!important}#fpsDbg{font-size:10px;max-width:52vw}}
+
+</style>
+<!-- B8: procedural-first + meshopt GLB + gunzip three · KHÔNG deploy. -->
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="hud">
+  <div id="fps">FPS --</div>
+  <div id="fpsDbg" aria-live="polite"></div>
+  <button type="button" id="qual" title="Chất lượng">MID</button>
+  <div id="info">Vịnh Hạ Long · anime toon<br>Trái joystick · Phải ATK/S1-3/ULT<br>Hết mana → 答题 · ULT cần câu HARD</div>
+  <div id="stickZone"><div id="stickBase"><div id="stickKnob"></div></div></div>
+  <div id="lookZone"></div>
+  <div id="hpHud">
+  <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;margin-bottom:2px"><span id="bossLab">👹 Boss</span><span id="bossHpTxt">420/420</span></div>
+  <div style="height:10px;background:#311;border:2px solid #16171B;border-radius:8px;overflow:hidden;box-shadow:2px 2px 0 #16171B"><i id="bossHpBar" style="display:block;height:100%;width:100%;background:linear-gradient(90deg,#ff6b5a,#ff3b2f)"></i></div>
+  <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:800;margin:6px 0 2px"><span id="heroLab">🥷 Kiếm Khách</span><span id="heroHpTxt">100/100</span></div>
+  <div style="height:10px;background:#133;border:2px solid #16171B;border-radius:8px;overflow:hidden;box-shadow:2px 2px 0 #16171B"><i id="heroHpBar" style="display:block;height:100%;width:100%;background:linear-gradient(90deg,#5dffb0,#1ec8ff)"></i></div>
+  <div id="comboLab" style="margin-top:4px;font-size:12px;font-weight:800;color:#FFD91F;min-height:16px"></div>
+  <div id="manaRow">
+    <div class="lab"><span>💙 Nội năng</span><span id="manaTxt">100/100</span></div>
+    <div id="manaBarWrap"><i id="manaBar"></i></div>
+  </div>
+</div>
+<div id="combatPad">
+  <button type="button" id="ultBtn" title="Ultimate"><span class="cd" id="ultCd"></span><span class="lbl">ULT<br>绝</span></button>
+  <button type="button" id="sk3"><span class="cd" id="sk3Cd"></span><span class="lbl">S3<br>斩</span></button>
+  <button type="button" id="sk2"><span class="cd" id="sk2Cd"></span><span class="lbl">S2<br>岚</span></button>
+  <button type="button" id="sk1"><span class="cd" id="sk1Cd"></span><span class="lbl">S1<br>气</span></button>
+  <button type="button" id="atkBtn"><span class="cd" id="atkCd"></span><span class="lbl">ATK<br>攻</span></button>
+</div>
+<button type="button" id="talkBtn" style="pointer-events:auto;position:absolute;right:18px;bottom:228px;min-width:64px;height:44px;border-radius:14px;border:3px solid #16171B;background:#FFD91F;color:#16171B;font-weight:800;font-size:12px;box-shadow:3px 3px 0 #16171B;padding:0 10px">答题<br><span style="font-size:10px;font-weight:700">Trả lời</span></button>
+<div id="flashFx"></div>
+<div id="pauseVeil"></div>
+<div id="ultBanner">绝技 · ULTIMATE</div>
+<div id="telegraph" style="display:none"></div>
+<div id="dmgLayer" style="position:absolute;inset:0;pointer-events:none;overflow:hidden"></div>
+
+<div id="loadBanner" aria-live="polite">
+  <div class="load-art">
+    <div class="load-sun"></div>
+    <div class="load-sea"></div>
+    <div class="load-karst k1"></div>
+    <div class="load-karst k2"></div>
+    <div class="load-karst k3"></div>
+  </div>
+  <h1 id="loadTitle">Hạ Long Ngữ Tiên</h1>
+  <p id="loadSub">Vịnh học tiếng · anime toon</p>
+  <div class="load-bar"><i id="loadBar"></i></div>
+</div>
+  <div id="qPanel">
+    <div class="badge" id="qBadge">Câu đố</div>
+    <div class="zh" id="qZh">你好</div>
+    <div class="py" id="qPy">nǐ hǎo</div>
+    <div class="hint" id="qHint">Chọn nghĩa · không hiện nghĩa trước khi chọn</div>
+    <div id="qOpts"></div>
+    <div id="qReveal"></div>
+  </div>
+  <div id="hint">Proto B8 · Three.js MIT · CC0 Quaternius · Không liên kết với kỳ thi HSK chính thức · chưa deploy</div>
+  <div id="err"></div>
+</div>
+<script>
+/* B8 bootstrap (classic): gunzip three, inject importmap, then load app module */
+window.__B8_NAV = performance.now();
+(async () => {
+  async function gunzipToObjectURL(url) {
+    const res = await fetch(url, { cache: 'force-cache' });
+    if (!res.ok) throw new Error('fetch ' + url + ' ' + res.status);
+    if (typeof DecompressionStream === 'undefined') throw new Error('no DecompressionStream');
+    const ab = await new Response(res.body.pipeThrough(new DecompressionStream('gzip'))).arrayBuffer();
+    return URL.createObjectURL(new Blob([ab], { type: 'text/javascript' }));
+  }
+  let threeUrl;
+  try {
+    threeUrl = await gunzipToObjectURL('./b8/three.module.min.js.gz');
+    console.info('[B8] three gunzip', (performance.now() - window.__B8_NAV).toFixed(0) + 'ms');
+  } catch (e) {
+    console.warn('[B8] gunzip fallback', e);
+    threeUrl = './b8/three.module.min.js';
+  }
+  const im = document.createElement('script');
+  im.type = 'importmap';
+  im.textContent = JSON.stringify({
+    imports: {
+      'three': threeUrl,
+      'three/addons/': './b8/addons/'
+    }
+  });
+  document.head.appendChild(im);
+  const mod = document.createElement('script');
+  mod.type = 'module';
+  mod.src = './b8/app.js';
+  mod.onerror = (ev) => {
+    const el = document.getElementById('err');
+    if (el) { el.style.display = 'block'; el.textContent = 'Không tải được app.js'; }
+  };
+  document.head.appendChild(mod);
+})();
+</script>
+</body>
+</html>
